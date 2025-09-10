@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import Visualization from "./pages/Visualization";
 import AITools from "./pages/AITools";
+import APIDocs from "./pages/APIDocs";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="upload" element={<Upload />} />
             <Route path="visualization" element={<Visualization />} />
             <Route path="ai-tools" element={<AITools />} />
+            <Route path="api-docs" element={<APIDocs />} />
             <Route path="about" element={<About />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

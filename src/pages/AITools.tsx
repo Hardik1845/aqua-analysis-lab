@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Brain, Search, Upload, Fish, Zap } from "lucide-react";
+import { Brain, Search, Upload, Fish, Zap, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AITools = () => {
@@ -88,6 +88,39 @@ const AITools = () => {
         description: `Found ${results.length} matching species.`
       });
     }, 1000);
+  };
+
+  const handleDownload = () => {
+    if (searchResults.length === 0) {
+      toast({
+        title: "No data to download",
+        description: "Please perform a search first to get results.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const csvContent = [
+      "Name,Category,Habitat,Status",
+      ...searchResults.map(species => 
+        `"${species.name}","${species.category}","${species.habitat}","${species.status}"`
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `marine_species_search_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+
+    toast({
+      title: "Download successful",
+      description: `Downloaded ${searchResults.length} species records as CSV.`
+    });
   };
 
   const handleOtolithUpload = () => {
@@ -200,19 +233,33 @@ const AITools = () => {
               </Button>
 
               {searchResults.length > 0 && (
-                <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
-                  {searchResults.map((species, index) => (
-                    <div key={index} className="p-3 bg-card rounded-lg border">
-                      <h4 className="font-semibold">{species.name}</h4>
-                      <p className="text-sm text-muted-foreground">{species.category}</p>
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <span>Habitat: {species.habitat}</span>
-                        <span className={species.status === 'Stable' ? 'text-green-600' : 'text-red-600'}>
-                          {species.status}
-                        </span>
+                <div className="mt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-semibold">Search Results ({searchResults.length})</h4>
+                    <Button 
+                      onClick={handleDownload}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      Download CSV
+                    </Button>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {searchResults.map((species, index) => (
+                      <div key={index} className="p-3 bg-card rounded-lg border">
+                        <h4 className="font-semibold">{species.name}</h4>
+                        <p className="text-sm text-muted-foreground">{species.category}</p>
+                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                          <span>Habitat: {species.habitat}</span>
+                          <span className={species.status === 'Stable' ? 'text-green-600' : 'text-red-600'}>
+                            {species.status}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>

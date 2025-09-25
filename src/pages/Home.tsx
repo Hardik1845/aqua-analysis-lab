@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Upload, BarChart3, Brain, Github, Mail, Info } from "lucide-react";
+import { Upload, BarChart3, Brain, Github, Mail, Info, User } from "lucide-react";
 import heroImage from "@/assets/hero-marine.jpg";
+import LiveDataFeed from "@/components/LiveDataFeed";
 
 const Home = () => {
   const features = [
@@ -59,7 +60,7 @@ const Home = () => {
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent"></div>
       </section>
 
-      {/* Features Section */}
+      {/* Live Data and Features Section */}
       <section className="py-20 bg-gradient-to-b from-background to-secondary/20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -69,25 +70,51 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <Card key={index} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-0 bg-card/50 backdrop-blur">
-                  <CardHeader className="text-center">
-                    <div className="mx-auto mb-4 p-4 bg-gradient-ocean rounded-full w-fit group-hover:animate-pulse">
-                      <Icon className="h-8 w-8 text-white" />
-                    </div>
-                    <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-center text-base leading-relaxed">
-                      {feature.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="grid gap-8 lg:grid-cols-4">
+            {/* Live Data Feed */}
+            <div className="lg:col-span-1">
+              <LiveDataFeed />
+            </div>
+            
+            {/* Feature Cards */}
+            <div className="lg:col-span-3 grid md:grid-cols-3 gap-8">
+              {features.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <Card key={index} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-0 bg-card/50 backdrop-blur">
+                    <CardHeader className="text-center">
+                      <div className="mx-auto mb-4 p-4 bg-gradient-ocean rounded-full w-fit group-hover:animate-pulse">
+                        <Icon className="h-8 w-8 text-white" />
+                      </div>
+                      <CardTitle className="text-xl">{feature.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-center text-base leading-relaxed">
+                        {feature.description}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Quick Access Dashboard Link */}
+          <div className="text-center mt-12">
+            <Card className="max-w-md mx-auto bg-gradient-to-r from-primary/10 to-accent/10">
+              <CardContent className="pt-6">
+                <User className="h-12 w-12 mx-auto mb-4 text-primary" />
+                <h3 className="text-xl font-semibold mb-2">User Dashboard</h3>
+                <p className="text-muted-foreground mb-4">
+                  Manage your research data, settings, and favorite species
+                </p>
+                <Link to="/dashboard">
+                  <Button className="bg-gradient-ocean">
+                    Access Dashboard
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

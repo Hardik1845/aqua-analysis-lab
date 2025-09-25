@@ -2,14 +2,19 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Upload as UploadIcon, FileText, Download } from "lucide-react";
+import { Upload as UploadIcon, FileText, Download, Check, AlertCircle, Clock, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Upload = () => {
   const [dragActive, setDragActive] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [previewData, setPreviewData] = useState<any[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  const [processing, setProcessing] = useState<{ [key: string]: boolean }>({});
   const { toast } = useToast();
 
   // Sample CSV data for preview
@@ -56,30 +61,118 @@ const Upload = () => {
       return;
     }
 
-    setUploadedFile(file);
-    // Simulate file parsing - in real app would parse actual file
-    setPreviewData(sampleData.slice(0, 10));
-    toast({
-      title: "File uploaded successfully",
-      description: `${file.name} is ready for processing.`
-    });
+    const fileId = Math.random().toString(36).substr(2, 9);
+    const newFile = {
+      id: fileId,
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      status: 'uploading' as const,
+      uploadedAt: new Date().toLocaleString()
+    };
+
+    setUploadedFiles(prev => [...prev, newFile]);
+    setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
+
+    // Simulate upload progress
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        const currentProgress = prev[fileId] || 0;
+        if (currentProgress >= 100) {
+          clearInterval(interval);
+          setUploadedFiles(prevFiles => 
+            prevFiles.map(f => 
+              f.id === fileId ? { ...f, status: 'completed' as const } : f
+            )
+          );
+          
+          // Simulate file parsing for preview
+          if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+            setPreviewData(sampleData.slice(0, 10));
+          }
+          
+          toast({
+            title: "File uploaded successfully",
+            description: `${file.name} is ready for processing.`
+          });
+          return prev;
+        }
+        return { ...prev, [fileId]: currentProgress + 10 };
+      });
+    }, 200);
   };
 
   const handleSubmit = () => {
-    if (!uploadedFile) {
+    const completedFiles = uploadedFiles.filter(f => f.status === 'completed');
+    if (completedFiles.length === 0) {
       toast({
-        title: "No file selected",
-        description: "Please upload a file before submitting.",
+        title: "No files ready",
+        description: "Please upload and complete file processing before submitting.",
         variant: "destructive"
       });
       return;
     }
 
-    // Simulate API call
-    toast({
-      title: "Data submitted",
-      description: "Your marine data has been successfully stored in the database."
+    // Start processing
+    completedFiles.forEach(file => {
+      setProcessing(prev => ({ ...prev, [file.id]: true }));
+      setUploadedFiles(prevFiles => 
+        prevFiles.map(f => 
+          f.id === file.id ? { ...f, status: 'processing' as const } : f
+        )
+      );
     });
+
+    // Simulate processing
+    setTimeout(() => {
+      completedFiles.forEach(file => {
+        setProcessing(prev => ({ ...prev, [file.id]: false }));
+        setUploadedFiles(prevFiles => 
+          prevFiles.map(f => 
+            f.id === file.id ? { ...f, status: 'processed' as const } : f
+          )
+        );
+      });
+      
+      toast({
+        title: "Data processed successfully",
+        description: `${completedFiles.length} file(s) have been analyzed and stored in the database.`
+      });
+    }, 3000);
+  };
+
+  const removeFile = (fileId: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+    setUploadProgress(prev => {
+      const newProgress = { ...prev };
+      delete newProgress[fileId];
+      return newProgress;
+    });
+    toast({
+      title: "File removed",
+      description: "File has been removed from the upload queue."
+    });
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'uploading': return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'completed': return <Check className="h-4 w-4 text-green-500" />;
+      case 'processing': return <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
+      case 'processed': return <Check className="h-4 w-4 text-green-600" />;
+      default: return <AlertCircle className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'uploading': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'processing': return 'bg-blue-100 text-blue-800';
+      case 'processed': return 'bg-green-100 text-green-900';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const downloadTemplate = () => {
@@ -139,10 +232,10 @@ const Upload = () => {
                   </div>
                   <div>
                     <p className="text-lg font-medium">
-                      {uploadedFile ? uploadedFile.name : "Choose a file or drag it here"}
+                      {uploadedFiles.length > 0 ? `${uploadedFiles.length} file(s) in queue` : "Choose files or drag them here"}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Supports CSV, JSON, and FASTA formats
+                      Supports CSV, JSON, and FASTA formats (multiple files allowed)
                     </p>
                   </div>
                 </div>
@@ -153,12 +246,70 @@ const Upload = () => {
                   <Download className="h-4 w-4 mr-2" />
                   Download Template
                 </Button>
-                <Button onClick={handleSubmit} disabled={!uploadedFile} className="bg-gradient-ocean">
-                  Submit Data
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={uploadedFiles.filter(f => f.status === 'completed').length === 0} 
+                  className="bg-gradient-ocean"
+                >
+                  Process {uploadedFiles.filter(f => f.status === 'completed').length} File(s)
                 </Button>
               </div>
             </CardContent>
           </Card>
+
+          {/* File Queue */}
+          {uploadedFiles.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Upload Queue ({uploadedFiles.length})</CardTitle>
+                <CardDescription>
+                  Monitor file upload and processing status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {uploadedFiles.map((file) => (
+                    <div key={file.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          {getStatusIcon(file.status)}
+                          <span className="font-medium">{file.name}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={getStatusColor(file.status)}>
+                            {file.status.toUpperCase()}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeFile(file.id)}
+                            disabled={file.status === 'processing'}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {file.status === 'uploading' && (
+                        <div className="mb-2">
+                          <Progress value={uploadProgress[file.id] || 0} className="h-2" />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Uploading... {uploadProgress[file.id] || 0}%
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="text-sm text-muted-foreground">
+                        <span>Size: {(file.size / 1024).toFixed(1)} KB</span>
+                        <span className="ml-4">Type: {file.type || 'Unknown'}</span>
+                        <span className="ml-4">Uploaded: {file.uploadedAt}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Preview Table */}
           {previewData.length > 0 && (

@@ -10,6 +10,8 @@ import Visualization from "./pages/Visualization";
 import AITools from "./pages/AITools";
 import APIDocs from "./pages/APIDocs";
 import About from "./pages/About";
+import Dashboard from "./pages/Dashboard";
+import SearchPage from "./pages/SearchPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
             <Route path="ai-tools" element={<AITools />} />
             <Route path="api-docs" element={<APIDocs />} />
             <Route path="about" element={<About />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="search" element={<SearchPage />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
